@@ -1,0 +1,9 @@
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/lib/
+
+# OS
+.DS_Store
+contracts/lib/*
+contracts/cache/*
