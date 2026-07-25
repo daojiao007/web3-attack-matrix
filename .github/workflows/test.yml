@@ -29,4 +29,25 @@ jobs:
         run: |
           git fetch origin main
           git checkout origin/main -- .gas-snapshot 2>/dev/null || echo "No baseline snapshot yet"
-          forge snapshot --diff
+          forge snapshot --diff > gas_diff.txt
+          cat gas_diff.txt
+
+      # --- Gas 回归阻断（任意函数增加 > 5% 则 CI 失败）---
+      # 需要 Python3 环境的 runner（ubuntu-latest 默认自带）
+      # 取消注释下面这段即可启用：
+      #
+      # - name: Block gas regression > 5%
+      #   if: github.event_name == 'pull_request'
+      #   run: |
+      #     python3 -c "
+      #     import re, sys
+      #     with open('gas_diff.txt') as f:
+      #         text = f.read()
+      #     # 匹配格式: test_xxx (gas: 100 -> 108 [8.00%])
+      #     for m in re.finditer(r'\(gas: \d+ -> (\d+) \[([0-9.]+)%\]\)', text):
+      #         change_pct = float(m.group(2))
+      #         if change_pct > 5:
+      #             print(f'GAS REGRESSION: {m.group(0)}')
+      #             sys.exit(1)
+      #     print('Gas check passed (all changes <= 5%)')
+      #     "
