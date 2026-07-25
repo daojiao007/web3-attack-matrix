@@ -204,6 +204,33 @@ Forge 在 128,000 次操作中未发现 invariant 违规。
 
 ---
 
+## CI/CD + Gas 回归门禁
+
+每次 `git push` 或 `PR` 自动触发 GitHub Actions 流水线：
+
+```yaml
+.github/workflows/test.yml:
+  ├── Step 1: checkout + 拉取 forge-std 子模块
+  ├── Step 2: 安装 Foundry 工具链
+  ├── Step 3: forge test -vvv（20 个测试，失败则阻断）
+  ├── Step 4: forge snapshot --check（生成 Gas 快照）
+  └── Step 5: forge snapshot --diff（PR 时对比 main 分支 Gas 差异）
+```
+
+### Gas 回归阻断逻辑（已配置，默认注释）
+
+PR 提交时，如果**任意函数的 Gas 消耗比 main 分支增加超过 5%** → CI 标红 → 禁止合并。
+
+```
+解析 forge snapshot --diff 输出
+  → 匹配每个函数的 Gas 变化百分比
+  → 超过 5% → exit 1（阻断）
+```
+
+> 取消注释 `.github/workflows/test.yml` 中 `Block gas regression > 5%` 段落即可启用。
+
+---
+
 ## 技术栈
 
 | 层级 | 技术 |
@@ -212,6 +239,7 @@ Forge 在 128,000 次操作中未发现 invariant 违规。
 | 测试框架 | Foundry (forge test) |
 | 测试类型 | Unit / Fuzz / Invariant |
 | 容器化 | Docker + docker-compose |
+| CI/CD | GitHub Actions（测试 + Gas 回归门禁） |
 | 作弊码 | vm.deal / vm.prank / vm.sign / vm.expectRevert |
 | 签名标准 | EIP-712 (Typed Structured Data) |
 
