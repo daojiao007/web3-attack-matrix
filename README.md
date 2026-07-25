@@ -1,49 +1,64 @@
-# mini-dex-qa — Web3 安全测试作品集
+# web3-attack-matrix — Web3 安全攻防测试矩阵
 
-> 一个最小化 DEX（AMM 恒定乘积池）+ **5 类链上攻击的完整攻防验证**。
-> 全部合约与测试手写完成，18 个测试全 PASS。
+> AMM 恒定乘积池 + **5 类链上攻击的完整攻防验证**。
+> 全部合约与测试手写完成，**20 个测试全 PASS**。
 >
-> **开发环境**：Foundry (Solidity ^0.8.20) | **测试框架**：forge test + fuzzing + invariant
+> **技术栈**：Solidity ^0.8.20 + Foundry (forge test / fuzzing / invariant) + Docker
 
 ---
 
 ## 项目结构
 
 ```
-contracts/
-├── src/
-│   ├── Token.sol          # ERC20 代币（mint/transfer/approve/transferFrom）
-│   ├── BadToken.sol       # 恶意 Token（transfer/transferFrom 返回 false，不 revert）
-│   ├── Pool.sol           # AMM 恒定乘积池（ETH ↔ Token swap，0.3% 手续费）
-│   ├── Vault.sol          # 有漏洞的存钱罐（演示重入攻击）
-│   ├── Attack.sol         # 重入攻击合约
-│   └── PermitSwap.sol     # EIP-712 链下签名授权 swap（防重放）
-├── test/
-│   ├── Token.t.sol        # ERC20 功能测试
-│   ├── BadToken.t.sol     # 假充值漏洞验证
-│   ├── Pool.t.sol         # Pool 功能 + Fuzzing + 三明治攻击 + 价格操纵
-│   ├── Pool.invariant.t.sol  # x×y=k 不变式测试（128,000 次随机操作）
-│   ├── Attack.t.sol       # 重入攻击验证
-│   └── PermitSwap.t.sol   # 签名重放防护验证
+web3-attack-matrix/
+├── src/                     # 6 个合约
+│   ├── Token.sol            # ERC20 代币（mint/transfer/approve/transferFrom）
+│   ├── BadToken.sol         # 恶意 Token（transfer 返回 false，不 revert）
+│   ├── Pool.sol             # AMM 恒定乘积池（ETH ↔ Token swap，0.3% 手续费）
+│   ├── Vault.sol            # 漏洞存钱罐（重入攻击靶子）
+│   ├── Attack.sol           # 重入攻击合约
+│   └── PermitSwap.sol       # EIP-712 链下签名授权（防重放）
+├── test/                    # 6 个测试文件
+│   ├── Token.t.sol          # ERC20 功能测试（3 PASS）
+│   ├── BadToken.t.sol       # 假充值漏洞验证（2 PASS）
+│   ├── Pool.t.sol           # Pool 功能 + Fuzz + 三明治 + 价格操纵（10 PASS）
+│   ├── Pool.invariant.t.sol # x×y=k 不变式（128,000 calls, 1 PASS）
+│   ├── Attack.t.sol         # 重入攻击验证（2 PASS）
+│   └── PermitSwap.t.sol     # 签名重放防护（2 PASS）
+├── lib/forge-std/           # Foundry 依赖
+├── Dockerfile               # Docker 镜像（Foundry 环境）
+├── docker-compose.yml       # 一键启动测试
+├── foundry.toml             # Foundry 配置
+└── remappings.txt           # 依赖重映射
 ```
 
 ---
 
 ## 快速启动
 
+### 方式 1：Docker（推荐，无需安装 Foundry）
+
+```bash
+git clone https://github.com/daojiao007/web3-attack-matrix.git
+cd web3-attack-matrix
+docker compose up
+```
+
+### 方式 2：本地 Foundry
+
 ```bash
 # 安装 Foundry
 curl -L https://foundry.paradigm.xyz | bash && foundryup
 
 # 运行全部测试
-cd contracts && forge test -vvv
+cd web3-attack-matrix && forge test -vvv
 
 # 运行指定测试
-forge test --match-test test_Reentrancy -vvv
 forge test --match-test test_FrontrunSandwich -vvv
+forge test --match-test test_Reentrancy -vvv
 forge test --match-test test_PermitSwapReplayReverts -vvv
 
-# 运行 Invariant Test（随机操作序列）
+# 运行 Invariant Test（128,000 次随机操作序列）
 forge test --match-test invariant_XTimesYNeverDecreases -vvv
 ```
 
@@ -196,6 +211,7 @@ Forge 在 128,000 次操作中未发现 invariant 违规。
 | 智能合约 | Solidity ^0.8.20 |
 | 测试框架 | Foundry (forge test) |
 | 测试类型 | Unit / Fuzz / Invariant |
+| 容器化 | Docker + docker-compose |
 | 作弊码 | vm.deal / vm.prank / vm.sign / vm.expectRevert |
 | 签名标准 | EIP-712 (Typed Structured Data) |
 
