@@ -4,3 +4,5 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+python3 -c "eth_amount = 1000 * 10**18; token_reserve = 199800798603792019356701; eth_reserve = 1001000000000000000000; 
+correct_token = eth_amount * token_reserve // eth_reserve; print(f'{correct_token} ({correct_token / 10**18} Token)')"
